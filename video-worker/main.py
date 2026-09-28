@@ -1,10 +1,28 @@
-from src.hls import create_360p
+from src.processor import process_video
 
 
-video = "input/sample.mp4"
-output_dir = "output/360p"
+input_video = "input/sample.mp4"
+output_directory = "output/video-1"
 
-playlist = create_360p(video, output_dir)
 
-print("360p HLS created successfully!")
-print(f"Playlist: {playlist}")
+result = process_video(
+    input_video,
+    output_directory
+)
+
+
+print("\n===================================")
+print("         UTube PROCESS RESULT")
+print("===================================")
+
+print(f"Status: {result['status']}")
+
+
+if result["status"] == "READY":
+
+    print(f"Thumbnail: {result['thumbnail']}")
+    print(f"Master playlist: {result['master_playlist']}")
+
+else:
+
+    print(f"Error: {result['error']}")
