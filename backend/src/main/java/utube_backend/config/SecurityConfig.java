@@ -41,17 +41,39 @@ public class SecurityConfig {
                         session.sessionCreationPolicy(
                                 SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(
-                                "/api/auth/**",
-                                "/api/videos",
-                                "/api/videos/*",
-                                "/api/search",
-                                "/api/videos/*/comments",
-                                "/api/users/*",
-                                "/api/users/*/videos"
-                        ).permitAll()
-                        .anyRequest().authenticated()
-                )
+        .requestMatchers(
+                "/api/auth/**",
+                "/api/search",
+                "/api/videos/*/comments",
+                "/api/users/*/videos"
+        ).permitAll()
+
+        .requestMatchers(
+                org.springframework.http.HttpMethod.GET,
+                "/api/videos",
+                "/api/videos/*"
+        ).permitAll()
+
+        .requestMatchers(
+                org.springframework.http.HttpMethod.POST,
+                "/api/videos"
+        ).authenticated()
+
+        .requestMatchers(
+                org.springframework.http.HttpMethod.PUT,
+                "/api/videos/*"
+        ).authenticated()
+
+        .requestMatchers(
+                org.springframework.http.HttpMethod.DELETE,
+                "/api/videos/*"
+        ).authenticated()
+
+        .requestMatchers("/api/users/me").authenticated()
+        .requestMatchers("/api/users/*").permitAll()
+
+        .anyRequest().authenticated()
+)
                 .authenticationProvider(authenticationProvider())
                 .addFilterBefore(
                         jwtAuthenticationFilter,
