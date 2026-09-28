@@ -1,75 +1,79 @@
-import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
+import Sidebar from "../components/Sidebar";
 import VideoCard from "../components/VideoCard";
-import { searchVideos } from "../services/videos";
+import { Search as SearchIcon, SlidersHorizontal } from "lucide-react";
 
 function Search() {
   const [searchParams] = useSearchParams();
-
   const query = searchParams.get("q") || "";
 
-  const videos = [
+  const allSearchResults = [
     {
       id: 1,
-      title: "Introduction to UTube",
-      creator: "UTube",
-      views: "1.2K",
+      title: "Tropical Beach Sunset Drone Footage",
+      creator: "Oceanic Media",
+      creatorAvatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Ocean",
+      views: "1.2M",
       time: "2 days ago",
-      thumbnail: "https://placehold.co/640x360?text=UTube+Video",
+      duration: "6:12",
+      thumbnail: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80",
     },
     {
       id: 2,
-      title: "Learn React",
-      creator: "Tech Creator",
-      views: "5.4K",
+      title: "Modern Minimalist Home Architecture Tour",
+      creator: "Design Lab",
+      creatorAvatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=DesignLab",
+      views: "450K",
       time: "1 week ago",
-      thumbnail: "https://placehold.co/640x360?text=Learn+React",
+      duration: "5:21",
+      thumbnail: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80",
     },
     {
       id: 3,
-      title: "Building a Video Platform",
-      creator: "Developer",
-      views: "2.1K",
-      time: "3 days ago",
-      thumbnail: "https://placehold.co/640x360?text=Video+Platform",
+      title: "Tokyo Cyberpunk Night Walk in 4K 60FPS",
+      creator: "Urban Wanderers",
+      creatorAvatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Tokyo",
+      views: "3.5M",
+      time: "4 days ago",
+      duration: "10:08",
+      thumbnail: "https://images.unsplash.com/photo-1519501025264-65ba15a82390?auto=format&fit=crop&w=800&q=80",
     },
     {
       id: 4,
-      title: "JavaScript Tutorial",
-      creator: "Code Academy",
-      views: "12K",
-      time: "2 weeks ago",
-      thumbnail: "https://placehold.co/640x360?text=JavaScript",
+      title: "Mastering Gourmet Culinary Techniques",
+      creator: "Chef's Table",
+      creatorAvatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Chefs",
+      views: "620K",
+      time: "3 days ago",
+      duration: "7:36",
+      thumbnail: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=800&q=80",
     },
   ];
 
   return (
-    <main className="search-page">
+    <div className="app-layout">
+      <Sidebar />
 
-      <h1>
-        {query
-          ? `Search results for "${query}"`
-          : "Search UTube"}
-      </h1>
+      <main className="main-content">
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
+          <h1 className="section-heading" style={{ fontSize: 22, margin: 0 }}>
+            <SearchIcon size={22} color="#ff1e38" />
+            {query ? `Search results for "${query}"` : "Explore Videos"}
+          </h1>
 
-      {!query && (
-        <p>
-          Enter something in the search bar to find videos.
-        </p>
-      )}
+          <button className="action-pill-btn">
+            <SlidersHorizontal size={16} />
+            <span>Filters</span>
+          </button>
+        </div>
 
-      {query && (
-        <div className="search-results">
-          {videos.map((video) => (
-            <VideoCard
-              key={video.id}
-              video={video}
-            />
+        <div className="video-grid">
+          {allSearchResults.map((video) => (
+            <VideoCard key={video.id} video={video} />
           ))}
         </div>
-      )}
-
-    </main>
+      </main>
+    </div>
   );
 }
 

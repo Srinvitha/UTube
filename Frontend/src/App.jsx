@@ -6,6 +6,8 @@ import {
   Route,
 } from "react-router-dom";
 
+import { AuthProvider } from "./context/AuthContext";
+
 import Navbar from "./components/Navbar";
 
 import Home from "./pages/Home";
@@ -19,27 +21,29 @@ import Channel from "./pages/Channel";
 
 function App() {
   return (
-    <BrowserRouter>
-      <Navbar />
+    <AuthProvider>
+      <BrowserRouter>
+        <Navbar />
 
-      <Routes>
-        <Route path="/" element={<Home />} />
+        <Routes>
+          <Route path="/" element={<Home />} />
 
-        <Route path="/login" element={<Login />} />
+          <Route path="/login" element={<Login />} />
 
-        <Route path="/register" element={<Register />} />
+          <Route path="/register" element={<Register />} />
 
-        <Route path="/search" element={<Search />} />
+          <Route path="/search" element={<Search />} />
 
-        <Route path="/upload" element={<Upload />} />
+          <Route path="/upload" element={<Upload />} />
 
-        <Route path="/watch/:id" element={<Watch />} />
+          <Route path="/watch/:id" element={<Watch />} />
 
-        <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/dashboard" element={<Dashboard />} />
 
-        <Route path="/channel/:id" element={<Channel />} />
-      </Routes>
-    </BrowserRouter>
+          <Route path="/channel/:id" element={<Channel />} />
+        </Routes>
+      </BrowserRouter>
+    </AuthProvider>
   );
 }
 

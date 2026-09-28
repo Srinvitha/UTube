@@ -1,99 +1,139 @@
+import { useState } from "react";
 import { useParams } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import Sidebar from "../components/Sidebar";
 import VideoCard from "../components/VideoCard";
+import { Tv2, Sparkles } from "lucide-react";
 
 function Channel() {
   const { id } = useParams();
+  const { user } = useAuth();
+  const [isSubscribed, setIsSubscribed] = useState(false);
 
-  const videos = [
+  const isSelf = id === "me" || (user && id === user.id.toString());
+
+  const channelInfo = {
+    name: isSelf && user ? user.name : "Alpine Explorer",
+    handle: isSelf && user ? user.handle : "@alpine_explorer",
+    avatar: isSelf && user ? user.avatar : "https://api.dicebear.com/7.x/avataaars/svg?seed=Alpine",
+    subscribers: "245K subscribers",
+    videosCount: "12 videos",
+    bio: "Exploring high altitude mountains, aerial cinematography, and tech builds across the world.",
+  };
+
+  const channelVideos = [
     {
-      id: 1,
-      title: "My First UTube Video",
-      creator: "UTube Creator",
-      views: "1.2K",
-      time: "2 days ago",
-      thumbnail:
-        "https://placehold.co/640x360?text=First+Video",
-    },
-    {
-      id: 2,
-      title: "React Tutorial",
-      creator: "UTube Creator",
-      views: "850",
-      time: "1 week ago",
-      thumbnail:
-        "https://placehold.co/640x360?text=React+Tutorial",
-    },
-    {
-      id: 3,
-      title: "Building My Project",
-      creator: "UTube Creator",
-      views: "2.4K",
+      id: 301,
+      title: "Lost in the Mountains — 4K Cinematic Journey",
+      creator: channelInfo.name,
+      creatorAvatar: channelInfo.avatar,
+      views: "2.1M",
       time: "2 weeks ago",
-      thumbnail:
-        "https://placehold.co/640x360?text=My+Project",
+      duration: "12:34",
+      thumbnail: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80",
     },
     {
-      id: 4,
-      title: "JavaScript Basics",
-      creator: "UTube Creator",
-      views: "4.1K",
-      time: "1 month ago",
-      thumbnail:
-        "https://placehold.co/640x360?text=JavaScript",
+      id: 302,
+      title: "Tropical Beach Sunset Drone Footage",
+      creator: channelInfo.name,
+      creatorAvatar: channelInfo.avatar,
+      views: "1.2M",
+      time: "2 days ago",
+      duration: "6:12",
+      thumbnail: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80",
+    },
+    {
+      id: 303,
+      title: "Tokyo Cyberpunk Night Walk in 4K 60FPS",
+      creator: channelInfo.name,
+      creatorAvatar: channelInfo.avatar,
+      views: "3.5M",
+      time: "4 days ago",
+      duration: "10:08",
+      thumbnail: "https://images.unsplash.com/photo-1519501025264-65ba15a82390?auto=format&fit=crop&w=800&q=80",
     },
   ];
 
   return (
-    <main className="channel-page">
+    <div className="app-layout">
+      <Sidebar />
 
-      <section className="channel-header">
+      <main className="main-content">
+        {/* Banner Cover */}
+        <div
+          style={{
+            height: 180,
+            borderRadius: 24,
+            background: "linear-gradient(135deg, #1c1e2b 0%, #0f1017 50%, #2b0913 100%)",
+            border: "1px solid var(--border-medium)",
+            marginBottom: -40,
+          }}
+        />
 
-        <div className="channel-avatar">
-          U
+        {/* Channel Header Box */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "flex-end",
+            gap: 24,
+            padding: "0 24px 24px",
+            marginBottom: 32,
+            flexWrap: "wrap",
+          }}
+        >
+          <img
+            src={channelInfo.avatar}
+            alt={channelInfo.name}
+            style={{
+              width: 100,
+              height: 100,
+              borderRadius: "50%",
+              border: "4px solid var(--bg-root)",
+              boxShadow: "var(--shadow-md)",
+            }}
+          />
+
+          <div style={{ flex: 1, minWidth: 220 }}>
+            <h1 style={{ fontFamily: "var(--font-heading)", fontSize: 26, fontWeight: 800 }}>
+              {channelInfo.name}
+            </h1>
+            <div style={{ fontSize: 13, color: "var(--text-muted)", margin: "4px 0 8px" }}>
+              {channelInfo.handle} • {channelInfo.subscribers} • {channelInfo.videosCount}
+            </div>
+            <p style={{ fontSize: 14, color: "var(--text-secondary)", maxWidth: 600 }}>
+              {channelInfo.bio}
+            </p>
+          </div>
+
+          {!isSelf && (
+            <button
+              className="btn-subscribe"
+              onClick={() => setIsSubscribed((prev) => !prev)}
+              style={{
+                background: isSubscribed ? "var(--bg-pill-hover)" : "var(--brand-red-bright)",
+                color: "#ffffff",
+                height: 40,
+                padding: "0 24px",
+              }}
+            >
+              {isSubscribed ? "Subscribed" : "Subscribe"}
+            </button>
+          )}
         </div>
 
-        <div className="channel-info">
+        {/* Channel Videos Section */}
+        <h2 className="section-heading">
+          <Tv2 size={20} color="#ff1e38" />
+          Channel Videos
+        </h2>
 
-          <h1>UTube Creator</h1>
-
-          <p>@creator{id}</p>
-
-          <p>
-            4 videos • 5.5K total views
-          </p>
-
-          <p className="channel-description">
-            Welcome to my UTube channel.
-            Here I share tutorials, projects
-            and other videos.
-          </p>
-
-        </div>
-
-        <button className="subscribe-button">
-          Subscribe
-        </button>
-
-      </section>
-
-      <section className="channel-content">
-
-        <h2>Videos</h2>
-
-        <div className="channel-video-grid">
-
-          {videos.map((video) => (
-            <VideoCard
-              key={video.id}
-              video={video}
-            />
+        <div className="video-grid">
+          {channelVideos.map((vid) => (
+            <VideoCard key={vid.id} video={vid} />
           ))}
-
         </div>
-
-      </section>
-
-    </main>
+      </main>
+    </div>
   );
 }
 

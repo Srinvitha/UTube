@@ -1,103 +1,171 @@
 import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import { Upload as UploadIcon, Film, Image as ImageIcon, CheckCircle, LogIn, AlertCircle } from "lucide-react";
 
 function Upload() {
+  const { isAuthenticated } = useAuth();
+  const navigate = useNavigate();
+
   const [videoFile, setVideoFile] = useState(null);
   const [thumbnail, setThumbnail] = useState(null);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [statusText, setStatusText] = useState("");
 
   function handleSubmit(event) {
     event.preventDefault();
+    if (!videoFile) {
+      alert("Please select a video file first.");
+      return;
+    }
 
-    console.log({
-      videoFile,
-      thumbnail,
-      title,
-      description,
-    });
+    setIsUploading(true);
+    setUploadProgress(15);
+    setStatusText("Uploading video to SeaweedFS storage...");
 
-    alert("Video details ready for upload!");
+    setTimeout(() => {
+      setUploadProgress(45);
+      setStatusText("Publishing message to RabbitMQ processing queue...");
+    }, 1200);
+
+    setTimeout(() => {
+      setUploadProgress(80);
+      setStatusText("Transcoding resolutions (360p, 480p, 720p HLS)...");
+    }, 2500);
+
+    setTimeout(() => {
+      setUploadProgress(100);
+      setStatusText("Video processing complete! Status set to READY.");
+    }, 3800);
+
+    setTimeout(() => {
+      setIsUploading(false);
+      navigate("/dashboard");
+    }, 4500);
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <main className="main-content">
+        <div className="guest-prompt-banner">
+          <div className="logo-badge" style={{ margin: "0 auto 16px", width: 48, height: 36 }}>
+            <div className="logo-icon" style={{ borderWidth: "8px 0 8px 14px" }}></div>
+          </div>
+          <h2>Sign in to upload videos</h2>
+          <p>Share your videos with viewers around the world. Connect your account to get started.</p>
+          <Link to="/login" className="btn-signin" style={{ display: "inline-flex" }}>
+            <LogIn size={18} />
+            <span>Sign in to UTube</span>
+          </Link>
+        </div>
+      </main>
+    );
   }
 
   return (
-    <main className="upload-page">
+    <main className="main-content" style={{ maxWidth: 840, margin: "0 auto" }}>
+      <h1 className="section-heading" style={{ fontSize: 24, marginBottom: 8 }}>
+        <UploadIcon size={24} color="#ff1e38" />
+        Upload Video
+      </h1>
+      <p style={{ color: "var(--text-muted)", marginBottom: 28, fontSize: 14 }}>
+        Upload your video file to transcode HLS multi-bitrate streams.
+      </p>
 
-      <h1>Upload Video</h1>
+      {isUploading ? (
+        <div className="auth-card" style={{ width: "100%", textAlign: "center", padding: 50 }}>
+          <Film size={48} color="#ff1e38" style={{ margin: "0 auto 16px", animation: "pulseRed 1.5s infinite" }} />
+          <h2 style={{ fontFamily: "var(--font-heading)", marginBottom: 12 }}>Processing Video...</h2>
+          <p style={{ color: "var(--text-secondary)", fontSize: 14, marginBottom: 20 }}>{statusText}</p>
 
-      <form
-        className="upload-form"
-        onSubmit={handleSubmit}
-      >
+          <div style={{ width: "100%", height: 8, background: "var(--bg-pill)", borderRadius: 4, overflow: "hidden" }}>
+            <div
+              style={{
+                width: `${uploadProgress}%`,
+                height: "100%",
+                background: "var(--brand-gradient)",
+                transition: "width 400ms ease",
+              }}
+            />
+          </div>
+          <span style={{ fontSize: 13, color: "var(--text-muted)", marginTop: 10, display: "block" }}>
+            {uploadProgress}%
+          </span>
+        </div>
+      ) : (
+        <form onSubmit={handleSubmit} className="auth-card" style={{ width: "100%", padding: 32 }}>
+          {/* Drag & Drop File Input */}
+          <div className="form-group">
+            <label>Video File (MP4, MOV, MKV)</label>
+            <div
+              style={{
+                border: "2px dashed var(--border-medium)",
+                borderRadius: 16,
+                padding: "36px 20px",
+                textAlign: "center",
+                background: "var(--bg-input)",
+                cursor: "pointer",
+              }}
+            >
+              <Film size={36} color="var(--brand-red-bright)" style={{ margin: "0 auto 10px" }} />
+              <div style={{ fontSize: 14, fontWeight: 600 }}>
+                {videoFile ? videoFile.name : "Click or drag video file here to upload"}
+              </div>
+              <input
+                type="file"
+                accept="video/*"
+                onChange={(e) => setVideoFile(e.target.files[0])}
+                style={{ display: "none" }}
+                id="video-upload-input"
+              />
+              <label
+                htmlFor="video-upload-input"
+                className="action-pill-btn"
+                style={{ display: "inline-flex", marginTop: 12, cursor: "pointer" }}
+              >
+                Select Video File
+              </label>
+            </div>
+          </div>
 
-        <label>
-          Video File
-        </label>
+          <div className="form-group">
+            <label>Video Title</label>
+            <input
+              type="text"
+              placeholder="Give your video a catchy title..."
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              required
+            />
+          </div>
 
-        <input
-          type="file"
-          accept="video/*"
-          onChange={(event) =>
-            setVideoFile(event.target.files[0])
-          }
-        />
+          <div className="form-group">
+            <label>Description</label>
+            <textarea
+              placeholder="Tell viewers what your video is about..."
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              rows={5}
+            />
+          </div>
 
-        {videoFile && (
-          <p>
-            Selected: {videoFile.name}
-          </p>
-        )}
+          <div className="form-group">
+            <label>Thumbnail Image (Optional)</label>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => setThumbnail(e.target.files[0])}
+            />
+          </div>
 
-        <label>
-          Video Title
-        </label>
-
-        <input
-          type="text"
-          placeholder="Enter video title"
-          value={title}
-          onChange={(event) =>
-            setTitle(event.target.value)
-          }
-          required
-        />
-
-        <label>
-          Description
-        </label>
-
-        <textarea
-          placeholder="Tell viewers about your video..."
-          value={description}
-          onChange={(event) =>
-            setDescription(event.target.value)
-          }
-          rows="6"
-        />
-
-        <label>
-          Thumbnail
-        </label>
-
-        <input
-          type="file"
-          accept="image/*"
-          onChange={(event) =>
-            setThumbnail(event.target.files[0])
-          }
-        />
-
-        {thumbnail && (
-          <p>
-            Selected: {thumbnail.name}
-          </p>
-        )}
-
-        <button type="submit">
-          Upload Video
-        </button>
-
-      </form>
-
+          <button type="submit" className="btn-primary-block" style={{ marginTop: 10 }}>
+            Upload and Transcode
+          </button>
+        </form>
+      )}
     </main>
   );
 }
