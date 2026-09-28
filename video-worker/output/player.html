@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>UTube Player</title>
+
+    <style>
+        body {
+            margin: 0;
+            padding: 40px;
+            background: #111;
+            color: white;
+            font-family: Arial, sans-serif;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: auto;
+        }
+
+        h1 {
+            margin-bottom: 20px;
+        }
+
+        video {
+            width: 100%;
+            background: black;
+        }
+
+        .quality {
+            margin-top: 20px;
+        }
+
+        select {
+            padding: 8px;
+            font-size: 16px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+
+        <h1>UTube Player</h1>
+
+        <video id="video" controls></video>
+
+        <div class="quality">
+            <label for="quality">Quality: </label>
+
+            <select id="quality">
+                <option value="-1">Auto</option>
+            </select>
+        </div>
+
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+
+    <script>
+
+        const video = document.getElementById("video");
+        const quality = document.getElementById("quality");
+
+        const videoSource = "video-1/master.m3u8";
+
+        const hls = new Hls();
+
+        hls.loadSource(videoSource);
+
+        hls.attachMedia(video);
+
+
+        hls.on(Hls.Events.MANIFEST_PARSED, function () {
+
+            console.log("HLS loaded successfully");
+
+            hls.levels.forEach(function (level, index) {
+
+                const option = document.createElement("option");
+
+                option.value = index;
+                option.text = level.height + "p";
+
+                quality.appendChild(option);
+
+            });
+
+        });
+
+
+        quality.addEventListener("change", function () {
+
+            const selectedLevel = parseInt(this.value);
+
+            hls.currentLevel = selectedLevel;
+
+        });
+
+    </script>
+
+</body>
+
+</html>
