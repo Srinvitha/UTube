@@ -5,6 +5,8 @@ import org.springframework.transaction.annotation.Transactional;
 import utube_backend.repository.VideoRepository;
 import utube_backend.video.Video;
 
+import java.util.List;
+
 @Service
 public class VideoService {
 
@@ -12,6 +14,11 @@ public class VideoService {
 
     public VideoService(VideoRepository videoRepository) {
         this.videoRepository = videoRepository;
+    }
+
+    @Transactional(readOnly = true)
+    public List<Video> getAllVideos() {
+        return videoRepository.findAll();
     }
 
     @Transactional(readOnly = true)

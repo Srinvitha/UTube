@@ -1,28 +1,41 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { registerUser, loginUser } from "../services/api";
 
 function Register() {
   const navigate = useNavigate();
-  const { register } = useAuth();
+  const { login } = useAuth();
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault();
     setLoading(true);
-
-    setTimeout(() => {
-      register({
-        name,
+    try {
+      const username = email.split("@")[0].toLowerCase();
+      const response = await registerUser({
+        username,
         email,
+        password,
+        displayName: name,
       });
-      setLoading(false);
+      await loginUser({ username, password }).then((loginResponse) => {
+        login({
+          id: loginResponse.id,
+          username: loginResponse.username,
+          name: loginResponse.displayName,
+        }, loginResponse.token);
+      });
       navigate("/");
-    }, 400);
+    } catch (error) {
+      alert("Registration failed. The username or email may already exist.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (

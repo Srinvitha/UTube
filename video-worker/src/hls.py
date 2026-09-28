@@ -10,24 +10,19 @@ def create_hls(input_file, output_dir, height):
     command = [
         "ffmpeg",
         "-i", input_file,
-
         "-vf", f"scale=-2:{height}",
         "-c:v", "libx264",
         "-preset", "fast",
         "-crf", "23",
-
         "-c:a", "aac",
         "-b:a", "128k",
-
         "-f", "hls",
         "-hls_time", "6",
         "-hls_playlist_type", "vod",
-
         "-hls_segment_filename",
         os.path.join(output_dir, "segment_%03d.ts"),
-
         "-y",
-        playlist
+        playlist,
     ]
 
     result = subprocess.run(command)

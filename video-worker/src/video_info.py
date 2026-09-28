@@ -1,6 +1,7 @@
 import json
 import subprocess
 
+
 def get_video_info(input_file):
     command = [
         "ffprobe",
@@ -8,13 +9,13 @@ def get_video_info(input_file):
         "-print_format", "json",
         "-show_format",
         "-show_streams",
-        input_file
+        input_file,
     ]
 
     result = subprocess.run(
         command,
         capture_output=True,
-        text=True
+        text=True,
     )
 
     if result.returncode != 0:
