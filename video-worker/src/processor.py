@@ -33,6 +33,7 @@ def process_video(input_file, output_dir):
         info = get_video_info(input_file)
 
         duration = info["format"]["duration"]
+        thumbnail_time = min(5.0, max(0.0, float(duration) / 2))
 
         print(f"Duration: {duration} seconds")
 
@@ -48,7 +49,8 @@ def process_video(input_file, output_dir):
 
         generate_thumbnail(
             input_file,
-            thumbnail
+            thumbnail,
+            thumbnail_time
         )
 
         print("Thumbnail completed.")

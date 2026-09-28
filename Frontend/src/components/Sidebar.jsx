@@ -1,31 +1,29 @@
-import { Link } from "react-router-dom";
+import { NavLink } from "react-router-dom";
 
 function Sidebar() {
   return (
-    <aside className="sidebar">
+    <aside className="sidebar" aria-label="Primary navigation">
+      <NavLink to="/" end>
+        Home
+      </NavLink>
 
-      <Link to="/">
-        🏠 Home
-      </Link>
+      <NavLink to="/search">
+        Explore
+      </NavLink>
 
-      <Link to="/search">
-        🔍 Explore
-      </Link>
+      <NavLink to="/upload">
+        Upload video
+      </NavLink>
 
-      <Link to="/upload">
-        ⬆️ Upload
-      </Link>
-
-      <Link to="/dashboard">
-        📊 Dashboard
-      </Link>
+      <NavLink to="/dashboard">
+        Creator studio
+      </NavLink>
 
       <hr />
 
-      <Link to="/login">
-        👤 Login
-      </Link>
-
+      <NavLink to="/login">
+        Sign in
+      </NavLink>
     </aside>
   );
 }

@@ -27,6 +27,7 @@ function Navbar() {
         <input
           name="search"
           type="text"
+          aria-label="Search videos"
           placeholder="Search videos..."
         />
 
@@ -36,13 +37,9 @@ function Navbar() {
       </form>
 
       <div className="navbar-actions">
-
-        <Link to="/login">
-          <button type="button">
-            Login
-          </button>
+        <Link to="/login" className="navbar-login">
+          Sign in
         </Link>
-
       </div>
 
     </nav>

@@ -2,13 +2,13 @@ import subprocess
 import os
 
 
-def generate_thumbnail(input_file, output_file):
+def generate_thumbnail(input_file, output_file, timestamp=5):
     os.makedirs(os.path.dirname(output_file), exist_ok=True)
 
     command = [
     "ffmpeg",
     "-i", input_file,
-    "-ss", "00:00:05",
+    "-ss", str(timestamp),
     "-frames:v", "1",
     "-update", "1",
     "-y",
