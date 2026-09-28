@@ -1,0 +1,61 @@
+{
+  "vhosts": [
+    {
+      "name": "/"
+    }
+  ],
+  "users": [],
+  "permissions": [],
+  "queues": [
+    {
+      "name": "video.processing",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false
+    },
+    {
+      "name": "video.completed",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false
+    },
+    {
+      "name": "video.failed",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false
+    }
+  ],
+  "exchanges": [
+    {
+      "name": "utube.video",
+      "vhost": "/",
+      "type": "direct",
+      "durable": true,
+      "auto_delete": false
+    }
+  ],
+  "bindings": [
+    {
+      "source": "utube.video",
+      "vhost": "/",
+      "destination": "video.processing",
+      "destination_type": "queue",
+      "routing_key": "video.processing"
+    },
+    {
+      "source": "utube.video",
+      "vhost": "/",
+      "destination": "video.completed",
+      "destination_type": "queue",
+      "routing_key": "video.completed"
+    },
+    {
+      "source": "utube.video",
+      "vhost": "/",
+      "destination": "video.failed",
+      "destination_type": "queue",
+      "routing_key": "video.failed"
+    }
+  ]
+}
