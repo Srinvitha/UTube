@@ -58,42 +58,15 @@ services:
       timeout: 5s
       retries: 10
 
-  minio:
-    image: quay.io/minio/minio:latest
-    container_name: utube-minio
+  storage:
+    image: chrislusf/seaweedfs:latest
+    container_name: utube-storage
     restart: unless-stopped
-    command: server /data --console-address ":9001"
-    environment:
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    command: server -s3
     ports:
-      - "${MINIO_API_PORT:-9000}:9000"
-      - "${MINIO_CONSOLE_PORT:-9001}:9001"
+      - "8333:8333"
     volumes:
-      - minio_data:/data
-    networks:
-      - utube-network
-    healthcheck:
-      test: ["CMD", "mc", "ready", "local"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
-
-  minio-init:
-    image: minio/mc:latest
-    container_name: utube-minio-init
-    depends_on:
-      minio:
-        condition: service_healthy
-    environment:
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
-      MINIO_ORIGINALS_BUCKET: ${MINIO_ORIGINALS_BUCKET}
-      MINIO_PROCESSED_BUCKET: ${MINIO_PROCESSED_BUCKET}
-      MINIO_THUMBNAILS_BUCKET: ${MINIO_THUMBNAILS_BUCKET}
-    volumes:
-      - ../minio/init.sh:/init.sh:ro
-    entrypoint: ["/bin/sh", "/init.sh"]
+      - storage_data:/data
     networks:
       - utube-network
 
@@ -111,7 +84,7 @@ services:
       - postgres
       - redis
       - rabbitmq
-      - minio
+      - storage
 
 networks:
   utube-network:
@@ -122,4 +95,4 @@ volumes:
   postgres_data:
   redis_data:
   rabbitmq_data:
-  minio_data:
+  storage_data:
