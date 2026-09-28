@@ -2,7 +2,8 @@ package utube_backend.user;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
-
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 @Entity
 @Table(name = "users")
 public class User {
@@ -26,11 +27,13 @@ public class User {
     @Column(name = "profile_image_url")
     private String profileImageUrl;
 
-    @Column(name = "created_at", nullable = false)
-    private LocalDateTime createdAt;
+    @CreationTimestamp
+@Column(name = "created_at", nullable = false, updatable = false)
+private LocalDateTime createdAt;
 
-    @Column(name = "updated_at", nullable = false)
-    private LocalDateTime updatedAt;
+@UpdateTimestamp
+@Column(name = "updated_at", nullable = false)
+private LocalDateTime updatedAt;
 
     public User() {
     }
