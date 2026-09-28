@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { uploadVideo } from "../services/api";
 import { Upload as UploadIcon, Film, Image as ImageIcon, CheckCircle, LogIn, AlertCircle } from "lucide-react";
 
 function Upload() {
@@ -15,7 +16,7 @@ function Upload() {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [statusText, setStatusText] = useState("");
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault();
     if (!videoFile) {
       alert("Please select a video file first.");
@@ -26,25 +27,23 @@ function Upload() {
     setUploadProgress(15);
     setStatusText("Uploading video to SeaweedFS storage...");
 
-    setTimeout(() => {
-      setUploadProgress(45);
-      setStatusText("Publishing message to RabbitMQ processing queue...");
-    }, 1200);
-
-    setTimeout(() => {
-      setUploadProgress(80);
-      setStatusText("Transcoding resolutions (360p, 480p, 720p HLS)...");
-    }, 2500);
-
-    setTimeout(() => {
+    try {
+      setUploadProgress(35);
+      const result = await uploadVideo({
+        videoFile,
+        thumbnail,
+        title,
+        description,
+      });
       setUploadProgress(100);
-      setStatusText("Video processing complete! Status set to READY.");
-    }, 3800);
-
-    setTimeout(() => {
+      setStatusText(`Video queued for processing. Status: ${result.status}`);
+      setTimeout(() => navigate("/dashboard"), 700);
+    } catch (error) {
       setIsUploading(false);
-      navigate("/dashboard");
-    }, 4500);
+      setUploadProgress(0);
+      setStatusText("");
+      alert(`Upload failed: ${error.message}`);
+    }
   }
 
   if (!isAuthenticated) {

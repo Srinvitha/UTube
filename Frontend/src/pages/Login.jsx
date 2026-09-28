@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { loginUser } from "../services/api";
 import { LogIn, Mail, Lock } from "lucide-react";
 
 function Login() {
@@ -11,18 +12,23 @@ function Login() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault();
     setLoading(true);
-
-    setTimeout(() => {
+    try {
+      const username = email.split("@")[0].toLowerCase();
+      const response = await loginUser({ username, password });
       login({
-        email,
-        name: email.split("@")[0],
-      });
-      setLoading(false);
+        id: response.id,
+        username: response.username,
+        name: response.displayName,
+      }, response.token);
       navigate("/");
-    }, 400);
+    } catch (error) {
+      alert("Login failed. Check your username/email and password.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
