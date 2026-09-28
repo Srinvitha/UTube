@@ -10,11 +10,11 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "hls.js": "^1.7.3",
     "lucide-react": "^1.48.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
-    "react-router-dom": "^7.18.4",
-    "hls.js": "^1.5.17"
+    "react-router-dom": "^7.18.4"
   },
   "devDependencies": {
     "@types/react": "^19.2.18",

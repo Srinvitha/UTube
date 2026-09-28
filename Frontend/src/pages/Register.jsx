@@ -5,7 +5,7 @@ import { registerUser, loginUser } from "../services/api";
 
 function Register() {
   const navigate = useNavigate();
-  const { register } = useAuth();
+  const { login } = useAuth();
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
