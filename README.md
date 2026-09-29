@@ -1,530 +1,298 @@
 # UTube
 
-### A Small-Scale Video Sharing & Streaming Platform
+### A Full-Stack Video Sharing and Streaming Platform
 
-UTube is a full-stack video sharing and streaming platform inspired by modern video platforms. It provides user authentication, video uploads, video metadata management, asynchronous video processing, multi-quality transcoding, thumbnail generation, and HLS-based video streaming.
+UTube is a full-stack video-sharing platform inspired by modern video streaming applications. It supports user authentication, video uploads, asynchronous video processing, HLS-based adaptive streaming, video browsing, search, and persistent storage.
 
-The system is designed as a collection of specialized services that work together to handle application logic, data storage, messaging, and video processing.
+The system combines a React frontend, Spring Boot backend, PostgreSQL database, Redis caching, RabbitMQ-based asynchronous processing, SeaweedFS object storage, and a Python + FFmpeg video-processing worker.
 
 ---
 
-# 1. Features
+## ✨ Features
 
-### User Features
-
-- User registration
-- User login
+- User registration and login
 - JWT-based authentication
-- Browse videos
-- Search videos
-- Watch videos
-- Upload videos
-- Add video title and description
-- Upload optional thumbnails
-- Creator channel and dashboard interfaces
-
-### Video Processing
-
-- Original video storage
+- Video upload with title and description
+- Persistent video metadata
+- Object-based video storage
 - Asynchronous video processing
 - Automatic thumbnail generation
-- FFmpeg-based transcoding
-- Multiple video qualities:
+- FFmpeg-based video transcoding
+- HLS streaming
+- Multiple video resolutions:
   - 360p
   - 480p
   - 720p
-- HLS master playlist generation
-- HLS-based video playback
+- Video browsing and search
+- Responsive React-based interface
+- Dockerized infrastructure
+- Nginx reverse proxy
+- RabbitMQ-based processing pipeline
 
 ---
 
-# 2. Technology Stack
+## 🛠️ Technology Stack
 
 | Layer | Technology |
 |---|---|
 | Frontend | React + Vite |
-| Backend | Spring Boot |
-| Backend Language | Java 21 |
+| Backend | Spring Boot + Java 21 |
+| Authentication | JWT |
 | Database | PostgreSQL |
 | Cache | Redis |
 | Message Queue | RabbitMQ |
 | Object Storage | SeaweedFS S3 |
 | Video Processing | Python + FFmpeg |
-| Streaming | HLS |
-| HLS Playback | hls.js |
-| Authentication | JWT |
+| Streaming | HLS + hls.js |
 | Reverse Proxy | Nginx |
 | Containerization | Docker + Docker Compose |
 | Version Control | Git + GitHub |
 
 ---
 
-# 3. System Architecture
+# 🏗️ System Architecture
+
+```mermaid
+flowchart TB
+
+    U["👤 User / Browser"]
+
+    subgraph Frontend["Frontend"]
+        F["React + Vite"]
+        P["hls.js Player"]
+    end
+
+    subgraph Gateway["Gateway"]
+        N["Nginx"]
+    end
+
+    subgraph Backend["Application Layer"]
+        B["Spring Boot Backend"]
+        A["JWT Authentication"]
+    end
+
+    subgraph Data["Data & Storage"]
+        DB[("PostgreSQL")]
+        R[("Redis")]
+        S[("SeaweedFS S3")]
+    end
+
+    subgraph Messaging["Asynchronous Processing"]
+        Q[["RabbitMQ"]]
+        W["Python Worker"]
+        FF["FFmpeg"]
+    end
+
+    U --> F
+    F --> N
+    N --> B
+
+    B --> A
+    B --> DB
+    B --> R
+    B --> S
+    B --> Q
+
+    Q --> W
+    W --> S
+    W --> FF
+    FF --> S
+
+    S --> P
+    P --> F
+```
+
+### Architecture Overview
+
+1. The user interacts with the React frontend.
+2. Nginx acts as the gateway between the frontend and backend services.
+3. Spring Boot handles authentication, APIs, business logic, and video metadata.
+4. PostgreSQL stores application data.
+5. Redis provides caching support.
+6. SeaweedFS stores uploaded videos, processed HLS files, and thumbnails.
+7. RabbitMQ sends video-processing jobs to the worker asynchronously.
+8. The Python worker downloads videos and uses FFmpeg to generate multiple resolutions and HLS playlists.
+9. The processed HLS files are stored back in SeaweedFS.
+10. The frontend uses hls.js for video playback.
+
+---
+
+# 🎬 Video Upload & Processing Flow
+
+```mermaid
+flowchart LR
+
+    A["🎥 User selects video"]
+    B["React Upload Page"]
+    C["Spring Boot API"]
+
+    D["Save video metadata"]
+    E["Upload original video"]
+    F[["RabbitMQ<br/>video.processing"]]
+
+    G["Python Worker"]
+    H["Download original"]
+    I["FFmpeg Processing"]
+
+    J["360p"]
+    K["480p"]
+    L["720p"]
+
+    M["HLS Playlists"]
+    N["SeaweedFS"]
+    O["hls.js Player"]
+
+    A --> B
+    B --> C
+
+    C --> D
+    C --> E
+    C --> F
+
+    F --> G
+    G --> H
+    H --> I
+
+    I --> J
+    I --> K
+    I --> L
+
+    J --> M
+    K --> M
+    L --> M
+
+    M --> N
+    N --> O
+```
+
+### Processing Pipeline
 
 ```text
-                              ┌───────────────────┐
-                              │       USER        │
-                              │     BROWSER       │
-                              └─────────┬─────────┘
-                                        │
-                                        ▼
-                              ┌───────────────────┐
-                              │   REACT + VITE    │
-                              │     FRONTEND      │
-                              └─────────┬─────────┘
-                                        │
-                                  HTTP / REST
-                                        │
-                                        ▼
-                              ┌───────────────────┐
-                              │       NGINX       │
-                              │  REVERSE PROXY    │
-                              └─────────┬─────────┘
-                                        │
-                                        ▼
-                         ┌────────────────────────────┐
-                         │       SPRING BOOT          │
-                         │          BACKEND           │
-                         │                            │
-                         │ Authentication             │
-                         │ User Management             │
-                         │ Video APIs                  │
-                         │ Upload Management            │
-                         └──────┬──────┬──────┬──────┘
-                                │      │      │
-                    ┌───────────┘      │      └────────────┐
-                    ▼                  ▼                   ▼
-             ┌────────────┐    ┌────────────┐     ┌─────────────┐
-             │ PostgreSQL │    │   Redis    │     │  SeaweedFS  │
-             │            │    │            │     │    S3       │
-             │ Users      │    │   Cache    │     │             │
-             │ Videos     │    │            │     │ Originals   │
-             │ Metadata   │    │            │     │ Thumbnails  │
-             └────────────┘    └────────────┘     │ HLS Output  │
-                                                  └──────┬──────┘
-                                                         │
-                                                         │
-                                               Processing Job
-                                                         │
-                                                         ▼
-                                                  ┌────────────┐
-                                                  │ RabbitMQ   │
-                                                  │            │
-                                                  │ Processing │
-                                                  │ Completed  │
-                                                  │ Failed     │
-                                                  └─────┬──────┘
-                                                        │
-                                                        ▼
-                                               ┌────────────────┐
-                                               │ Python Worker  │
-                                               │                │
-                                               │ Download       │
-                                               │ Process        │
-                                               │ Upload         │
-                                               └───────┬────────┘
-                                                       │
-                                                       ▼
-                                                  ┌─────────┐
-                                                  │ FFmpeg  │
-                                                  └────┬────┘
-                                                       │
-                                    ┌──────────────────┼──────────────────┐
-                                    ▼                  ▼                  ▼
-                                  360p               480p               720p
-                                    └──────────────────┼──────────────────┘
-                                                       ▼
-                                                  ┌─────────┐
-                                                  │   HLS   │
-                                                  └────┬────┘
-                                                       │
-                                                       ▼
-                                                  SeaweedFS
-                                                       │
-                                                       ▼
-                                                  HLS Player
+Upload
+   ↓
+Spring Boot
+   ↓
+SeaweedFS
+   ↓
+RabbitMQ
+   ↓
+Python Worker
+   ↓
+FFmpeg
+   ↓
+360p / 480p / 720p
+   ↓
+HLS
+   ↓
+SeaweedFS
+   ↓
+hls.js
+   ↓
+Video Playback
 ```
 
 ---
 
-# 4. Application Flow
+# 👤 User Flow
 
-```text
-                         ┌───────────────┐
-                         │     USER      │
-                         └───────┬───────┘
-                                 │
-                                 ▼
-                     ┌──────────────────────┐
-                     │   Open UTube        │
-                     └──────────┬───────────┘
-                                │
-                                ▼
-                     ┌──────────────────────┐
-                     │ Register / Login     │
-                     └──────────┬───────────┘
-                                │
-                                ▼
-                     ┌──────────────────────┐
-                     │   JWT Authentication │
-                     └──────────┬───────────┘
-                                │
-                                ▼
-                     ┌──────────────────────┐
-                     │     Home / Feed      │
-                     └──────────┬───────────┘
-                                │
-               ┌────────────────┼────────────────┐
-               │                │                │
-               ▼                ▼                ▼
-           ┌────────┐      ┌────────┐      ┌──────────┐
-           │ Search │      │ Watch  │      │ Channel  │
-           └────────┘      └────────┘      └──────────┘
-                               
-                               
-                         CREATOR FLOW
-                                │
-                                ▼
-                         ┌────────────┐
-                         │   Upload   │
-                         └─────┬──────┘
-                               │
-                               ▼
-                     ┌──────────────────┐
-                     │ Video + Metadata │
-                     └────────┬─────────┘
-                              │
-                              ▼
-                     ┌──────────────────┐
-                     │ Spring Boot API  │
-                     └────────┬─────────┘
-                              │
-                              ▼
-                     ┌──────────────────┐
-                     │    SeaweedFS     │
-                     │ Original Video   │
-                     └────────┬─────────┘
-                              │
-                              ▼
-                     ┌──────────────────┐
-                     │     RabbitMQ     │
-                     │ Processing Job   │
-                     └────────┬─────────┘
-                              │
-                              ▼
-                     ┌──────────────────┐
-                     │  Python Worker   │
-                     └────────┬─────────┘
-                              │
-                              ▼
-                         ┌─────────┐
-                         │ FFmpeg  │
-                         └────┬────┘
-                              │
-                     ┌────────┼────────┐
-                     ▼        ▼        ▼
-                   360p     480p     720p
-                     └────────┼────────┘
-                              ▼
-                           HLS
-                              │
-                              ▼
-                        SeaweedFS
-                              │
-                              ▼
-                         Watch Video
+```mermaid
+flowchart TD
+
+    A["Open UTube"]
+
+    B{"Has an account?"}
+
+    C["Register"]
+    D["Login"]
+    E["JWT Authentication"]
+
+    F["Home"]
+
+    G["Browse Videos"]
+    H["Search Videos"]
+    I["Watch Video"]
+    J["Upload Video"]
+
+    K["Video Processing"]
+    L["HLS Playback"]
+
+    A --> B
+
+    B -- "No" --> C
+    C --> D
+
+    B -- "Yes" --> D
+
+    D --> E
+    E --> F
+
+    F --> G
+    F --> H
+    F --> I
+    F --> J
+
+    J --> K
+    K --> L
+
+    I --> L
 ```
 
 ---
 
-# 5. Video Processing Pipeline
+# 🔐 Authentication Flow
 
-The video processing system works asynchronously so that video transcoding is handled independently from the main backend.
+UTube uses JWT-based authentication for protected backend operations.
 
-```text
-┌──────────────┐
-│ Video Upload │
-└──────┬───────┘
-       │
-       ▼
-┌─────────────────────┐
-│   Spring Boot API   │
-└──────────┬──────────┘
-           │
-           ├───────────────────────┐
-           │                       │
-           ▼                       ▼
-    ┌─────────────┐         ┌─────────────┐
-    │ PostgreSQL  │         │  SeaweedFS  │
-    │  Metadata   │         │   Original  │
-    └─────────────┘         └──────┬──────┘
-                                   │
-                                   │
-                         ┌─────────▼─────────┐
-                         │     RabbitMQ      │
-                         │ video.processing  │
-                         └─────────┬─────────┘
-                                   │
-                                   ▼
-                         ┌───────────────────┐
-                         │   Python Worker   │
-                         └─────────┬─────────┘
-                                   │
-                                   ▼
-                              ┌─────────┐
-                              │ FFmpeg  │
-                              └────┬────┘
-                                   │
-                    ┌──────────────┼──────────────┐
-                    ▼              ▼              ▼
-                  360p           480p           720p
-                    │              │              │
-                    └──────────────┼──────────────┘
-                                   ▼
-                             ┌───────────┐
-                             │ HLS Files │
-                             └─────┬─────┘
-                                   │
-                                   ▼
-                             ┌───────────┐
-                             │ SeaweedFS │
-                             └─────┬─────┘
-                                   │
-                                   ▼
-                             ┌───────────┐
-                             │ hls.js    │
-                             │  Player   │
-                             └───────────┘
+```mermaid
+sequenceDiagram
+
+    participant User
+    participant Frontend as React Frontend
+    participant Backend as Spring Boot
+    participant DB as PostgreSQL
+
+    User->>Frontend: Register / Login
+    Frontend->>Backend: Authentication request
+    Backend->>DB: Validate / store user
+    DB-->>Backend: User data
+    Backend-->>Frontend: JWT token
+
+    Frontend->>Backend: Protected request + Bearer JWT
+    Backend->>Backend: Validate JWT
+    Backend-->>Frontend: Authorized response
 ```
 
 ---
 
-# 6. Video Status Lifecycle
+# 🚀 Getting Started
 
-```text
-              ┌───────────┐
-              │ UPLOADING │
-              └─────┬─────┘
-                    │
-                    ▼
-              ┌───────────┐
-              │  UPLOADED │
-              └─────┬─────┘
-                    │
-                    ▼
-             ┌─────────────┐
-             │ PROCESSING  │
-             └──────┬──────┘
-                    │
-              ┌─────┴─────┐
-              │           │
-              ▼           ▼
-        ┌─────────┐   ┌─────────┐
-        │  READY  │   │ FAILED  │
-        └─────────┘   └─────────┘
-```
-
----
-
-# 7. Storage Architecture
-
-SeaweedFS provides S3-compatible object storage for media files.
-
-```text
-                     ┌──────────────────────┐
-                     │      SeaweedFS       │
-                     │       S3 API         │
-                     └──────────┬───────────┘
-                                │
-              ┌─────────────────┼─────────────────┐
-              │                 │                 │
-              ▼                 ▼                 ▼
-      ┌───────────────┐ ┌───────────────┐ ┌─────────────────┐
-      │utube-originals│ │utube-processed│ │utube-thumbnails │
-      ├───────────────┤ ├───────────────┤ ├─────────────────┤
-      │ Original      │ │ master.m3u8   │ │ thumbnail.jpg   │
-      │ video files   │ │ 360p          │ │                 │
-      │               │ │ 480p          │ │                 │
-      │               │ │ 720p          │ │                 │
-      └───────────────┘ └───────────────┘ └─────────────────┘
-```
-
-Example object paths:
-
-```text
-originals/<videoId>/<filename>
-
-processed/<videoId>/master.m3u8
-processed/<videoId>/360p/index.m3u8
-processed/<videoId>/480p/index.m3u8
-processed/<videoId>/720p/index.m3u8
-
-thumbnails/<videoId>/thumbnail.jpg
-```
-
----
-
-# 8. RabbitMQ Architecture
-
-RabbitMQ connects the backend and video worker.
-
-```text
-                    ┌─────────────────┐
-                    │ Spring Boot     │
-                    │ Backend         │
-                    └────────┬────────┘
-                             │
-                             │ Publish
-                             ▼
-                 ┌────────────────────────┐
-                 │   video.processing     │
-                 └────────────┬───────────┘
-                              │
-                              │ Consume
-                              ▼
-                    ┌─────────────────┐
-                    │ Python Worker   │
-                    └────────┬────────┘
-                             │
-                    ┌────────┴────────┐
-                    │                 │
-                 Success            Failure
-                    │                 │
-                    ▼                 ▼
-          ┌────────────────┐   ┌────────────────┐
-          │video.completed │   │  video.failed  │
-          └────────────────┘   └────────────────┘
-```
-
----
-
-# 9. Authentication Flow
-
-UTube uses JWT-based authentication.
-
-```text
-┌──────────────┐
-│    User      │
-└──────┬───────┘
-       │
-       │ Register
-       ▼
-┌────────────────┐
-│ Spring Boot    │
-│ Auth API       │
-└───────┬────────┘
-        │
-        ▼
-   ┌─────────┐
-   │PostgreSQL│
-   └─────────┘
-
-
-        Login
-          │
-          ▼
-┌────────────────┐
-│ Spring Boot    │
-│ Auth API       │
-└───────┬────────┘
-        │
-        ▼
-   ┌───────────┐
-   │ JWT Token │
-   └─────┬─────┘
-         │
-         ▼
-┌────────────────────┐
-│ React Frontend     │
-│ Stores JWT         │
-└─────────┬──────────┘
-          │
-          │ Authorization:
-          │ Bearer <token>
-          ▼
-┌────────────────────┐
-│ Protected Backend  │
-│      APIs          │
-└────────────────────┘
-```
-
----
-
-# 10. Repository Structure
-
-```text
-UTube/
-│
-├── Frontend/
-│   ├── package.json
-│   ├── package-lock.json
-│   ├── vite.config.js
-│   ├── index.html
-│   └── src/
-│       ├── App.jsx
-│       ├── App.css
-│       ├── index.css
-│       │
-│       ├── components/
-│       ├── context/
-│       ├── pages/
-│       └── services/
-│
-├── backend/
-│   ├── pom.xml
-│   ├── mvnw
-│   ├── mvnw.cmd
-│   └── src/
-│       ├── main/
-│       └── test/
-│
-├── video-worker/
-│   ├── main.py
-│   ├── requirements.txt
-│   ├── Dockerfile
-│   └── src/
-│       ├── processor.py
-│       ├── hls.py
-│       ├── storage.py
-│       ├── thumbnail.py
-│       └── video_info.py
-│
-├── member4-infrastructure/
-│   ├── docker/
-│   │   └── docker-compose.yml
-│   ├── nginx/
-│   ├── rabbitmq/
-│   ├── redis/
-│   └── scripts/
-│
-└── README.md
-```
-
----
-
-# 11. Requirements
+## 1. Prerequisites
 
 Install the following before running UTube:
 
 - Git
 - Docker Desktop
 - Java 21
-- Node.js and npm
+- Node.js + npm
 - Python 3
 - FFmpeg
 
-Recommended:
+Verify the installations:
 
-- VS Code
-- Chrome / Microsoft Edge
+```powershell
+git --version
+docker --version
+docker compose version
+java -version
+node --version
+npm --version
+python --version
+ffmpeg -version
+```
 
 ---
 
-# 12. First-Time Setup
-
-Use this section if UTube has **never been run on your computer before**.
-
-## Step 1 — Clone
+# 📥 2. Clone the Repository
 
 Open PowerShell:
 
@@ -536,79 +304,84 @@ git switch main
 
 ---
 
-## Step 2 — Start Infrastructure
+# ▶️ 3. Start UTube
 
-### Terminal 1
+UTube uses four terminals.
+
+---
+
+## Terminal 1 — Infrastructure
+
+From the project root:
 
 ```powershell
-cd UTube
 docker compose -f member4-infrastructure/docker/docker-compose.yml up -d
 ```
 
-Check:
+Check the running containers:
 
 ```powershell
 docker ps
 ```
 
-The following services should be running:
+The infrastructure includes:
 
-```text
-utube-postgres
-utube-redis
-utube-rabbitmq
-utube-storage
-utube-nginx
-```
+- PostgreSQL
+- Redis
+- RabbitMQ
+- SeaweedFS
+- Nginx
 
 ---
 
-## Step 3 — Start Backend
+## Terminal 2 — Spring Boot Backend
 
-### Terminal 2
+Open a new PowerShell terminal:
 
 ```powershell
 cd UTube\backend
 ```
 
-Run:
+Start the backend:
 
 ```powershell
 .\mvnw.cmd spring-boot:run "-Dspring-boot.run.jvmArguments=-Dutube.storage.access-key=utube -Dutube.storage.secret-key=change_me -Dutube.storage.endpoint=http://localhost:8333"
 ```
 
-Wait until the backend reports that Tomcat has started on port `8080`.
+The backend runs on:
 
-Keep the terminal running.
+```text
+http://localhost:8080
+```
+
+Wait until Spring Boot reports that the application has started.
 
 ---
 
-## Step 4 — Install and Start Worker
+## Terminal 3 — Video Processing Worker
 
-### Terminal 3
+Open another PowerShell terminal:
 
 ```powershell
 cd UTube\video-worker
 ```
 
-Install dependencies:
+### First time only
+
+Install Python dependencies:
 
 ```powershell
 pip install -r requirements.txt
 ```
 
-Set RabbitMQ configuration:
+Set the required environment variables:
 
 ```powershell
 $env:RABBITMQ_HOST="localhost"
 $env:RABBITMQ_PORT="5672"
 $env:RABBITMQ_USER="utube"
 $env:RABBITMQ_PASSWORD="change_me"
-```
 
-Set storage configuration:
-
-```powershell
 $env:S3_ENDPOINT="http://localhost:8333"
 $env:S3_ACCESS_KEY="utube"
 $env:S3_SECRET_KEY="change_me"
@@ -620,31 +393,39 @@ Start the worker:
 python main.py
 ```
 
-The worker should display:
+You should see:
 
 ```text
+===================================
+          UTube VIDEO WORKER
+===================================
+RabbitMQ: localhost:5672
+Queue: video.processing
 Waiting for video processing jobs...
+===================================
 ```
 
-Keep the terminal running.
+The worker remains running and waits for video-processing jobs from RabbitMQ.
 
 ---
 
-## Step 5 — Install and Start Frontend
+## Terminal 4 — React Frontend
 
-### Terminal 4
+Open another PowerShell terminal:
 
 ```powershell
 cd UTube\Frontend
 ```
 
-Install dependencies:
+### First time only
+
+Install frontend dependencies:
 
 ```powershell
 npm install
 ```
 
-Start the frontend:
+Start the development server:
 
 ```powershell
 npm run dev
@@ -658,42 +439,29 @@ http://localhost:5173/
 
 ---
 
-# 13. Running UTube Again
+# 🔁 Running UTube Again
 
-## ⭐ For normal use after the project has already been set up
+After the project has already been installed, you do **not** need to reinstall dependencies every time.
 
-You **do not need to clone the repository again**.
-
-You also normally do not need to run `npm install` or `pip install` again.
-
-Simply start the four parts.
-
----
-
-### Terminal 1 — Docker
+### Terminal 1
 
 ```powershell
-cd E:\Projects\UTube
-
+cd UTube
 docker compose -f member4-infrastructure/docker/docker-compose.yml up -d
 ```
 
----
-
-### Terminal 2 — Backend
+### Terminal 2
 
 ```powershell
-cd E:\Projects\UTube\backend
+cd UTube\backend
 
 .\mvnw.cmd spring-boot:run "-Dspring-boot.run.jvmArguments=-Dutube.storage.access-key=utube -Dutube.storage.secret-key=change_me -Dutube.storage.endpoint=http://localhost:8333"
 ```
 
----
-
-### Terminal 3 — Worker
+### Terminal 3
 
 ```powershell
-cd E:\Projects\UTube\video-worker
+cd UTube\video-worker
 
 $env:RABBITMQ_HOST="localhost"
 $env:RABBITMQ_PORT="5672"
@@ -707,13 +475,10 @@ $env:S3_SECRET_KEY="change_me"
 python main.py
 ```
 
----
-
-### Terminal 4 — Frontend
+### Terminal 4
 
 ```powershell
-cd E:\Projects\UTube\Frontend
-
+cd UTube\Frontend
 npm run dev
 ```
 
@@ -725,203 +490,148 @@ http://localhost:5173/
 
 ---
 
-# 14. Quick Start for Returning Developers
+# 🌐 Service URLs
 
-If the project has already been configured, this is the entire startup procedure:
-
-```text
-┌─────────────────────────────────────────────────────────────┐
-│                     U T U B E                               │
-├─────────────────────────────────────────────────────────────┤
-│                                                             │
-│  1. Docker Infrastructure                                   │
-│     docker compose ... up -d                                │
-│                                                             │
-│  2. Spring Boot Backend                                     │
-│     ./mvnw spring-boot:run                                  │
-│                                                             │
-│  3. Python Video Worker                                    │
-│     python main.py                                          │
-│                                                             │
-│  4. React Frontend                                          │
-│     npm run dev                                             │
-│                                                             │
-│                    ↓                                        │
-│                                                             │
-│             http://localhost:5173                           │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
-```
-
----
-
-# 15. Application URLs
-
-| Component | URL |
+| Service | URL |
 |---|---|
-| UTube Frontend | `http://localhost:5173` |
-| Backend API | `http://localhost:8080` |
-| Nginx | `http://localhost` |
-| SeaweedFS S3 | `http://localhost:8333` |
-| RabbitMQ Management | `http://localhost:15672` |
-| PostgreSQL | `localhost:5432` |
-| Redis | `localhost:6379` |
+| UTube Frontend | http://localhost:5173 |
+| Spring Boot Backend | http://localhost:8080 |
+| Nginx | http://localhost |
+| Nginx Health Check | http://localhost/health |
+| SeaweedFS S3 | http://localhost:8333 |
+| RabbitMQ Management | http://localhost:15672 |
+| PostgreSQL | localhost:5432 |
+| Redis | localhost:6379 |
 
 ---
 
-# 16. Using the Application
+# 🧪 Using UTube
 
-## Register
+### 1. Register
 
-Open:
+Create a new UTube account using the registration page.
 
-```text
-http://localhost:5173/register
-```
+### 2. Login
 
-Create an account using:
+Sign in using your registered credentials.
 
-- Full name
-- Email
-- Password
+### 3. Browse
 
----
+Explore available videos from the home page.
 
-## Login
+### 4. Search
 
-Open:
+Use the search functionality to find videos.
 
-```text
-http://localhost:5173/login
-```
+### 5. Watch
 
-After successful authentication, the frontend receives a JWT token and uses it for protected API requests.
+Open a video to access the video player and HLS stream.
 
----
+### 6. Upload
 
-## Browse
+Authenticated users can upload a video with:
 
-Open:
-
-```text
-http://localhost:5173/
-```
-
-Browse available videos and application content.
-
----
-
-## Upload
-
-Open:
-
-```text
-http://localhost:5173/upload
-```
-
-Provide:
-
-- Video file
 - Title
 - Description
+- Video file
 - Optional thumbnail
 
-Select:
+The uploaded video enters the asynchronous processing pipeline.
 
-**Upload and Transcode**
+---
 
-The video then follows the processing pipeline:
+# 📦 Storage Structure
+
+UTube organizes objects in SeaweedFS using separate logical buckets.
+
+### Original Videos
 
 ```text
-Upload
-  │
-  ▼
-Spring Boot
-  │
-  ├──────────────► PostgreSQL
-  │
-  ▼
-SeaweedFS
-  │
-  ▼
-RabbitMQ
-  │
-  ▼
-Python Worker
-  │
-  ▼
-FFmpeg
-  │
-  ├──────► 360p
-  ├──────► 480p
-  └──────► 720p
-              │
-              ▼
-             HLS
-              │
-              ▼
-          SeaweedFS
-              │
-              ▼
-          HLS Player
+originals/<videoId>/<filename>
+```
+
+### Processed Videos
+
+```text
+processed/<videoId>/master.m3u8
+processed/<videoId>/360p/index.m3u8
+processed/<videoId>/480p/index.m3u8
+processed/<videoId>/720p/index.m3u8
+```
+
+### Thumbnails
+
+```text
+thumbnails/<videoId>/thumbnail.jpg
 ```
 
 ---
 
-# 17. Stopping UTube
+# 📨 RabbitMQ Queues
 
-Stop the frontend:
+UTube uses RabbitMQ for asynchronous video processing.
 
-```text
-Ctrl + C
+| Queue | Purpose |
+|---|---|
+| `video.processing` | Sends video-processing jobs to the worker |
+| `video.completed` | Reports successful processing |
+| `video.failed` | Reports processing failures |
+
+This keeps video processing separate from the main backend request flow.
+
+---
+
+# 🐳 Docker Infrastructure
+
+The infrastructure services are managed using Docker Compose.
+
+Start:
+
+```powershell
+docker compose -f member4-infrastructure/docker/docker-compose.yml up -d
 ```
 
-Stop the worker:
-
-```text
-Ctrl + C
-```
-
-Stop the backend:
-
-```text
-Ctrl + C
-```
-
-Then stop Docker infrastructure:
+Stop:
 
 ```powershell
 docker compose -f member4-infrastructure/docker/docker-compose.yml down
 ```
 
----
+Check containers:
 
-# 18. Restarting Later
-
-When you want to use the project again:
-
-1. Start Docker Desktop.
-2. Start the Docker infrastructure.
-3. Start Spring Boot.
-4. Start the Python worker.
-5. Start the React frontend.
-6. Open `http://localhost:5173`.
-
-No cloning is required again.
+```powershell
+docker ps
+```
 
 ---
 
-# 19. Infrastructure Verification
+# 🔧 Troubleshooting
 
-If you want to quickly verify that the supporting services are running:
+## Docker services are not running
 
-### PostgreSQL
+Check:
+
+```powershell
+docker ps
+```
+
+If required services are missing:
+
+```powershell
+docker compose -f member4-infrastructure/docker/docker-compose.yml up -d
+```
+
+---
+
+## Check PostgreSQL
 
 ```powershell
 docker exec utube-postgres pg_isready
 ```
 
-### Redis
+---
+
+## Check Redis
 
 ```powershell
 docker exec utube-redis redis-cli ping
@@ -933,164 +643,100 @@ Expected:
 PONG
 ```
 
-### RabbitMQ
+---
+
+## Check RabbitMQ
 
 ```powershell
 docker exec utube-rabbitmq rabbitmq-diagnostics -q ping
 ```
 
-Expected:
+---
 
-```text
-Ping succeeded
+## Frontend dependencies are missing
+
+From `Frontend`:
+
+```powershell
+npm install
 ```
 
-### Nginx
+Then:
 
-Open:
-
-```text
-http://localhost/health
+```powershell
+npm run dev
 ```
 
 ---
 
-# 20. Troubleshooting
+## Python dependencies are missing
 
-### Docker containers are not running
-
-```powershell
-docker ps
-```
-
-If necessary:
+From `video-worker`:
 
 ```powershell
-docker compose -f member4-infrastructure/docker/docker-compose.yml up -d
-```
-
-### Frontend dependencies are missing
-
-```powershell
-cd E:\Projects\UTube\Frontend
-npm install
-```
-
-### Worker dependencies are missing
-
-```powershell
-cd E:\Projects\UTube\video-worker
 pip install -r requirements.txt
 ```
 
-### Worker is waiting for jobs
+Then:
+
+```powershell
+python main.py
+```
+
+---
+
+## Worker says "Waiting for video processing jobs"
+
+This means the worker is running successfully and is waiting for a message from RabbitMQ.
 
 ```text
 Waiting for video processing jobs...
 ```
 
-This means the worker is running and waiting for a video-processing message from RabbitMQ.
-
-### Backend cannot connect to infrastructure
-
-Verify Docker:
-
-```powershell
-docker ps
-```
-
-Then verify PostgreSQL, Redis, and RabbitMQ using the commands above.
+Leave the worker terminal running while using UTube.
 
 ---
 
-# 21. Key Learning Outcomes
+# 🛑 Stopping UTube
 
-The project demonstrates practical implementation of:
-
-- Full-stack web development
-- React frontend development
-- REST API development
-- JWT authentication
-- PostgreSQL database integration
-- Redis caching
-- RabbitMQ message queues
-- S3-compatible object storage
-- Asynchronous processing
-- Python-based workers
-- FFmpeg video transcoding
-- HLS streaming
-- Docker-based infrastructure
-- Service-oriented system architecture
-- Integration of multiple independent technologies
-
----
-
-# 22. Final Architecture
+Stop the frontend with:
 
 ```text
-                              ┌──────────────┐
-                              │     USER     │
-                              └──────┬───────┘
-                                     │
-                                     ▼
-                              ┌──────────────┐
-                              │    React     │
-                              │    Vite      │
-                              └──────┬───────┘
-                                     │
-                                     ▼
-                              ┌──────────────┐
-                              │    Nginx     │
-                              └──────┬───────┘
-                                     │
-                                     ▼
-                           ┌──────────────────┐
-                           │   Spring Boot    │
-                           │     Backend      │
-                           └───┬────┬────┬────┘
-                               │    │    │
-                 ┌─────────────┘    │    └─────────────┐
-                 ▼                  ▼                  ▼
-          ┌────────────┐     ┌────────────┐     ┌─────────────┐
-          │ PostgreSQL │     │   Redis    │     │  SeaweedFS  │
-          └────────────┘     └────────────┘     └──────┬──────┘
-                                                       │
-                                                       │
-                                                       ▼
-                                                ┌────────────┐
-                                                │  RabbitMQ  │
-                                                └──────┬─────┘
-                                                       │
-                                                       ▼
-                                                ┌────────────┐
-                                                │   Python   │
-                                                │   Worker   │
-                                                └──────┬─────┘
-                                                       │
-                                                       ▼
-                                                   ┌───────┐
-                                                   │FFmpeg │
-                                                   └───┬───┘
-                                                       │
-                                          ┌────────────┼────────────┐
-                                          ▼            ▼            ▼
-                                        360p         480p         720p
-                                          └────────────┼────────────┘
-                                                       ▼
-                                                     HLS
-                                                       │
-                                                       ▼
-                                                 SeaweedFS
-                                                       │
-                                                       ▼
-                                                  hls.js
-                                                       │
-                                                       ▼
-                                                Video Playback
+Ctrl + C
+```
+
+Stop the worker with:
+
+```text
+Ctrl + C
+```
+
+Stop the Spring Boot backend with:
+
+```text
+Ctrl + C
+```
+
+Finally, stop the Docker infrastructure:
+
+```powershell
+docker compose -f member4-infrastructure/docker/docker-compose.yml down
 ```
 
 ---
 
-# UTube
+# 🎓 Key Learning Outcomes
 
-### A student-scale implementation of a modern video-sharing and video-processing platform.
+Through this project, we learned how to build a distributed full-stack application by integrating frontend development, REST APIs, JWT authentication, databases, object storage, message queues, asynchronous processing, Docker, and HLS-based video streaming.
+
+We also gained practical experience in connecting multiple independent services into a complete video-processing pipeline.
+
+---
+
+# 👥 Project
+
+**UTube — Full-Stack Video Sharing & Streaming Platform**
+
+Built using:
+
+**React • Spring Boot • PostgreSQL • Redis • RabbitMQ • SeaweedFS • Python • FFmpeg • HLS • Nginx • Docker**
